@@ -31,6 +31,60 @@ const theme = createTheme({
         },
       },
     },
+    MuiFilledInput: {
+      styleOverrides: {
+        root: {
+          backgroundColor: '#fff', // Ensures white background for filled input
+          '&:hover': {
+            backgroundColor: '#fff',
+          },
+          '&.Mui-focused': {
+            backgroundColor: '#fff',
+          },
+        },
+      },
+    },
+    MuiOutlinedInput: {
+      styleOverrides: {
+        root: {
+          backgroundColor: '#fff', // Ensures white background for outlined input
+          '&:hover': {
+            backgroundColor: '#fff',
+          },
+          '&.Mui-focused': {
+            backgroundColor: '#fff',
+          },
+        },
+      },
+    },
+    MuiInputBase: {
+      styleOverrides: {
+        input: {
+          backgroundColor: '#fff', // Ensures white background for the input element itself
+          '&:-webkit-autofill': {
+            WebkitBoxShadow: '0 0 0 1000px white inset', // Fix for autofill background color
+            WebkitTextFillColor: '#212121', // Ensures black text color on autofill
+          },
+        },
+      },
+    },
+    MuiInput: {
+      styleOverrides: {
+        root: {
+          // Targets the standard variant of TextField
+          backgroundColor: '#fff', // Ensures white background for standard input
+          '&:hover:not(.Mui-disabled):before': {
+            borderBottom: '2px solid rgba(0, 0, 0, 0.42)', // Default hover border color for standard
+          },
+          '&.Mui-focused:after': {
+            borderBottomColor: '#212121', // Primary color for focus border
+          },
+          '&:before': {
+            borderBottom: '1px solid rgba(0, 0, 0, 0.42)', // Default border color for standard
+          },
+        },
+      },
+    },
   },
 });
 
