@@ -106,8 +106,6 @@ export const CommentsDialog = ({ open, onClose, postId }) => {
 };
 
 const Dashboard = () => {
-  const [postDialogOpen, setPostDialogOpen] = useState(false);
-  const [selectedPost, setSelectedPost] = useState(null);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -161,30 +159,8 @@ const Dashboard = () => {
           flexDirection: 'column',
         }}
       >
-        <PostsGrid 
-          posts={posts}
-          onPostClick={post => { setSelectedPost(post); setPostDialogOpen(true); }} 
-        />
+        <PostsGrid posts={posts} />
       </Box>
-
-      {/* Post Dialog */}
-      <Dialog open={postDialogOpen} onClose={() => setPostDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          {selectedPost?.title}
-          <CloseIcon onClick={() => setPostDialogOpen(false)} style={{ position: 'absolute', right: 8, top: 8, cursor: 'pointer' }} />
-        </DialogTitle>
-        <DialogContent dividers>
-          {selectedPost?.postImage && (
-            <Box mb={2}>
-              <img src={selectedPost.postImage} alt={selectedPost.title} style={{ width: '100%', borderRadius: 8 }} />
-            </Box>
-          )}
-          <Typography variant="body1" mb={2}>{selectedPost?.data}</Typography>
-          <Typography variant="caption" color="text.secondary">
-            By {selectedPost?.user?.username || 'Unknown'} in {selectedPost?.category?.name || 'Uncategorized'}
-          </Typography>
-        </DialogContent>
-      </Dialog>
     </Box>
   );
 };

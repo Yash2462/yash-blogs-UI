@@ -5,6 +5,7 @@ import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import Posts from './pages/Posts';
 import Comments from './pages/Comments';
+import PostDetail from './pages/PostDetail';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import './App.css';
 import { jwtDecode } from 'jwt-decode';
@@ -53,6 +54,7 @@ function AppRoutes() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/posts" element={<ProtectedRoute><Posts /></ProtectedRoute>} />
+        <Route path="/posts/:postId" element={<ProtectedRoute><PostDetail /></ProtectedRoute>} />
         <Route path="/comments" element={<ProtectedRoute><Comments /></ProtectedRoute>} />
         <Route path="*" element={<Navigate to="/login" />} />
       </Routes>

@@ -18,6 +18,9 @@ import {
   FormControl,
   Alert,
   CircularProgress,
+  Container,
+  Paper,
+  InputAdornment,
 } from '@mui/material';
 import api from '../api/axios';
 import { useAuth } from '../contexts/AuthContext';
@@ -26,92 +29,11 @@ import Dashboard from './Dashboard';
 import { CommentsDialog } from './Dashboard';
 import PostsGrid from '../components/PostsGrid';
 import CloseIcon from '@mui/icons-material/Close';
-
-const PostForm = ({ open, onClose, onSubmit, post, categories, loading }) => {
-  const [title, setTitle] = useState(post?.title || '');
-  const [data, setData] = useState(post?.data || '');
-  const [categoryId, setCategoryId] = useState(post?.category?.id || '');
-  const [postImage, setPostImage] = useState(post?.postImage || '');
-
-  useEffect(() => {
-    setTitle(post?.title || '');
-    setData(post?.data || '');
-    setCategoryId(post?.category?.id || '');
-    setPostImage(post?.postImage || '');
-  }, [post]);
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSubmit({ title, data, categoryId, postImage });
-  };
-
-  return (
-    <Dialog open={open} onClose={onClose}>
-      <DialogTitle>{post ? 'Edit Post' : 'Create Post'}</DialogTitle>
-      <DialogContent>
-        <form onSubmit={handleSubmit}>
-          <TextField
-            label="Title"
-            fullWidth
-            margin="normal"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-          />
-          <TextField
-            label="Content"
-            fullWidth
-            margin="normal"
-            multiline
-            rows={4}
-            value={data}
-            onChange={(e) => setData(e.target.value)}
-            required
-          />
-          <TextField
-            label="Image URL"
-            fullWidth
-            margin="normal"
-            value={postImage}
-            onChange={(e) => setPostImage(e.target.value)}
-          />
-          <FormControl fullWidth margin="normal" required>
-            <InputLabel>Category</InputLabel>
-            <Select
-              value={categoryId}
-              label="Category"
-              onChange={(e) => setCategoryId(e.target.value)}
-            >
-              {categories.length === 0 ? (
-                <MenuItem value="" disabled>
-                  No categories available
-                </MenuItem>
-              ) : (
-                categories.map((cat) => (
-                  <MenuItem key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </MenuItem>
-                ))
-              )}
-            </Select>
-          </FormControl>
-        </form>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button onClick={handleSubmit} variant="contained" disabled={loading}>
-          {loading ? (
-            <CircularProgress size={20} color="inherit" />
-          ) : post ? (
-            'Update'
-          ) : (
-            'Create'
-          )}
-        </Button>
-      </DialogActions>
-    </Dialog>
-  );
-};
+import PostForm from '../components/PostForm';
+import CommentsDrawer from '../components/CommentsDrawer';
+import SearchIcon from '@mui/icons-material/Search';
+import FilterListIcon from '@mui/icons-material/FilterList';
+import AddIcon from '@mui/icons-material/Add';
 
 const Posts = () => {
   const { user, loadingUser } = useAuth();
@@ -120,121 +42,72 @@ const Posts = () => {
   const [categories, setCategories] = useState([]);
   const [openForm, setOpenForm] = useState(false);
   const [editingPost, setEditingPost] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [alert, setAlert] = useState({ type: '', message: '' });
   const [fetching, setFetching] = useState(true);
   const [searchTitle, setSearchTitle] = useState('');
   const [searchCategory, setSearchCategory] = useState('');
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [selectedPostId, setSelectedPostId] = useState(null);
-  const [postDialogOpen, setPostDialogOpen] = useState(false);
-  const [selectedPost, setSelectedPost] = useState(null);
-
-  // Fetch posts from API
-  const fetchPosts = async () => {
-    setFetching(true);
-    try {
-      const res = await api.get('/api/posts');
-      let postsArray = [];
-      if (Array.isArray(res.data)) {
-        postsArray = res.data;
-      } else if (res.data && Array.isArray(res.data.posts)) {
-        postsArray = res.data.posts;
-      } else if (res.data && Array.isArray(res.data.data)) {
-        postsArray = res.data.data;
-      }
-      setPosts(postsArray);
-    } catch {
-      setAlert({ type: 'error', message: 'Failed to fetch posts.' });
-      setPosts([]);
-    } finally {
-      setFetching(false);
-    }
-  };
-
-  // Fetch categories from API
-  const fetchCategories = async () => {
-    try {
-      const res = await api.get('/api/category');
-      let categoriesArray = [];
-      if (Array.isArray(res.data)) {
-        categoriesArray = res.data;
-      } else if (res.data && Array.isArray(res.data.categories)) {
-        categoriesArray = res.data.categories;
-      } else if (res.data && Array.isArray(res.data.data)) {
-        categoriesArray = res.data.data;
-      }
-      setCategories(categoriesArray);
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-      setCategories([]);
-      setAlert({ type: 'error', message: 'Failed to fetch categories.' });
-    }
-  };
 
   useEffect(() => {
     fetchPosts();
     fetchCategories();
   }, []);
 
-  // Create new post
+  const fetchPosts = async () => {
+    setFetching(true);
+    try {
+      const res = await api.get('/api/posts');
+      const postsData = Array.isArray(res.data) 
+        ? res.data 
+        : res.data.posts || res.data.data || [];
+      setPosts(postsData);
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+      setAlert({ type: 'error', message: 'Failed to fetch posts' });
+    } finally {
+      setFetching(false);
+    }
+  };
+
+  const fetchCategories = async () => {
+    setCategoriesLoading(true);
+    try {
+      const res = await api.get('/api/category');
+      const categoriesData = Array.isArray(res.data) 
+        ? res.data 
+        : res.data.categories || res.data.data || [];
+      setCategories(categoriesData);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      setAlert({ type: 'error', message: 'Failed to fetch categories' });
+    } finally {
+      setCategoriesLoading(false);
+    }
+  };
+
   const handleCreate = async (data) => {
-    if (!user || !user.id) {
-      setAlert({ type: 'error', message: 'User not loaded. Please log in again.' });
+    if (!user?.id) {
+      setAlert({ type: 'error', message: 'User not logged in' });
       return;
     }
+
     setLoading(true);
-    setAlert({});
     try {
-      await api.post(
-        `/api/posts/user/${user.id}/category/${data.categoryId}`,
-        {
-          title: data.title,
-          data: data.data,
-          postImage: data.postImage,
-        }
-      );
-      setOpenForm(false);
+      await api.post(`/api/posts/user/${user.id}/category/${data.categoryId}`, {
+        title: data.title,
+        data: data.data,
+        postImage: data.postImage
+      });
+      setCreateDialogOpen(false);
       setAlert({ type: 'success', message: 'Post created successfully!' });
-      fetchPosts();
-    } catch {
-      setAlert({ type: 'error', message: 'Failed to create post.' });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Edit existing post
-  const handleEdit = async (data) => {
-    if (!editingPost || !editingPost.postId) {
-      setAlert({ type: 'error', message: 'No post selected for editing.' });
-      return;
-    }
-    setLoading(true);
-    setAlert({});
-    try {
-      await api.put(`/api/posts/${editingPost.postId}`, { ...editingPost, ...data });
-      setEditingPost(null);
-      setOpenForm(false);
-      setAlert({ type: 'success', message: 'Post updated successfully!' });
-      fetchPosts();
-    } catch {
-      setAlert({ type: 'error', message: 'Failed to update post.' });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Delete post by ID
-  const handleDelete = async (postId) => {
-    setLoading(true);
-    setAlert({});
-    try {
-      await api.delete(`/api/posts/${postId}`);
-      setAlert({ type: 'success', message: 'Post deleted successfully!' });
-      fetchPosts();
-    } catch {
-      setAlert({ type: 'error', message: 'Failed to delete post.' });
+      await fetchPosts();
+    } catch (error) {
+      console.error('Error creating post:', error);
+      setAlert({ type: 'error', message: 'Failed to create post' });
     } finally {
       setLoading(false);
     }
@@ -246,6 +119,21 @@ const Posts = () => {
     const matchesCategory = searchCategory ? String(post.category?.id) === String(searchCategory) : true;
     return matchesTitle && matchesCategory;
   });
+
+  const handleLike = async (postId) => {
+    if (!user || !user.id) return;
+    try {
+      await api.post(`/api/posts/${postId}/like`);
+      fetchPosts();
+    } catch (error) {
+      console.error('Error liking post:', error);
+    }
+  };
+
+  const handleOpenComments = (postId) => {
+    setSelectedPostId(postId);
+    setCommentsOpen(true);
+  };
 
   // Show loader while user info is loading
   if (loadingUser) {
@@ -268,118 +156,182 @@ const Posts = () => {
   }
 
   return (
-    <Box 
-      sx={{
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden',
-      }}
-    >
-      <Box 
-        sx={{
-          p: 3,
-          pb: 3,
-          bgcolor: 'background.default',
-          borderBottom: 1,
-          borderColor: 'divider',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: { xs: 'wrap', md: 'nowrap' },
-          gap: 2,
-        }}
-      >
-        <Typography 
-          variant="h4" 
-          fontWeight="bold" 
-          color="primary.main"
-          sx={{
-            order: { xs: 1, md: 1 },
-            flexBasis: { xs: '100%', md: 'auto' },
-            mb: { xs: 2, md: 0 },
-          }}
-        >
-          All Posts
-        </Typography>
-
-        <Box 
-          sx={{ 
-            display: 'flex',
-            gap: 2,
-            order: { xs: 2, md: 2 },
-            width: { xs: '100%', md: 'auto' },
-            flexDirection: { xs: 'column', sm: 'row' },
-          }}
-        >
-          <TextField
-            label="Search by Title"
-            value={searchTitle}
-            onChange={e => setSearchTitle(e.target.value)}
-            variant="outlined"
-            size="small"
-            sx={{ 
-              width: { xs: '100%', sm: 200 },
-              minWidth: { sm: 200 },
-              bgcolor: 'background.paper',
-            }}
-          />
-          <FormControl 
-            variant="outlined" 
-            size="small" 
-            sx={{ 
-              width: { xs: '100%', sm: 180 },
-              minWidth: { sm: 180 },
-              bgcolor: 'background.paper',
-            }}
-          >
-            <InputLabel>Category</InputLabel>
-            <Select
-              value={searchCategory}
-              onChange={e => setSearchCategory(e.target.value)}
-              label="Category"
+    <Box sx={{ 
+      display: 'flex', 
+      flexDirection: 'column',
+      minHeight: 'calc(100vh - 64px)',
+      bgcolor: 'background.default',
+    }}>
+      <Box sx={{ 
+        p: 2, 
+        borderBottom: 1, 
+        borderColor: 'divider',
+        bgcolor: 'background.paper',
+        position: 'sticky',
+        top: 0,
+        zIndex: 1,
+      }}>
+        <Container maxWidth="lg">
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            mb: 3,
+          }}>
+            <Typography variant="h5" component="h1" sx={{ fontWeight: 600 }}>
+              Posts
+            </Typography>
+            <Button
+              variant="contained"
+              onClick={() => setCreateDialogOpen(true)}
+              startIcon={<AddIcon />}
+              sx={{
+                borderRadius: '8px',
+                textTransform: 'none',
+                px: 3,
+                py: 1,
+                boxShadow: 2,
+                '&:hover': {
+                  boxShadow: 4,
+                },
+              }}
             >
-              <MenuItem value="">All Categories</MenuItem>
-              {categories.map(cat => (
-                <MenuItem key={cat.id} value={cat.id}>{cat.name}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Box>
+              Create Post
+            </Button>
+          </Box>
+
+          <Grid container spacing={2}>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                size="small"
+                placeholder="Search posts..."
+                value={searchTitle}
+                onChange={(e) => setSearchTitle(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon sx={{ color: 'text.secondary' }} />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    bgcolor: 'background.paper',
+                    borderRadius: '8px',
+                    '&:hover': {
+                      '& > fieldset': {
+                        borderColor: 'primary.main',
+                      },
+                    },
+                  },
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth size="small">
+                <InputLabel id="category-filter-label">Category</InputLabel>
+                <Select
+                  labelId="category-filter-label"
+                  value={searchCategory}
+                  label="Category"
+                  onChange={(e) => setSearchCategory(e.target.value)}
+                  startAdornment={
+                    <InputAdornment position="start">
+                      <FilterListIcon sx={{ color: 'text.secondary' }} />
+                    </InputAdornment>
+                  }
+                  sx={{
+                    bgcolor: 'background.paper',
+                    borderRadius: '8px',
+                    '&:hover': {
+                      '& > fieldset': {
+                        borderColor: 'primary.main',
+                      },
+                    },
+                  }}
+                >
+                  <MenuItem value="">All Categories</MenuItem>
+                  {categoriesLoading ? (
+                    <MenuItem disabled>
+                      <CircularProgress size={20} sx={{ mr: 1 }} />
+                      Loading categories...
+                    </MenuItem>
+                  ) : (
+                    categories.map((category) => (
+                      <MenuItem key={category.id} value={category.id}>
+                        {category.name}
+                      </MenuItem>
+                    ))
+                  )}
+                </Select>
+              </FormControl>
+            </Grid>
+          </Grid>
+        </Container>
       </Box>
 
-      <Box 
-        sx={{
-          flex: 1,
-          overflow: 'hidden',
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-      >
-        <PostsGrid 
-          posts={filteredPosts}
-          onPostClick={post => { setSelectedPost(post); setPostDialogOpen(true); }} 
-        />
-      </Box>
-
-      {/* Post Dialog */}
-      <Dialog open={postDialogOpen} onClose={() => setPostDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          {selectedPost?.title}
-          <CloseIcon onClick={() => setPostDialogOpen(false)} style={{ position: 'absolute', right: 8, top: 8, cursor: 'pointer' }} />
-        </DialogTitle>
-        <DialogContent dividers>
-          {selectedPost?.postImage && (
-            <Box mb={2}>
-              <img src={selectedPost.postImage} alt={selectedPost.title} style={{ width: '100%', borderRadius: 8 }} />
-            </Box>
+      <Box sx={{ 
+        flex: 1, 
+        overflow: 'auto',
+        '&::-webkit-scrollbar': {
+          width: '8px',
+        },
+        '&::-webkit-scrollbar-track': {
+          background: 'transparent',
+        },
+        '&::-webkit-scrollbar-thumb': {
+          background: 'rgba(0, 0, 0, 0.2)',
+          borderRadius: '4px',
+          '&:hover': {
+            background: 'rgba(0, 0, 0, 0.3)',
+          },
+        },
+        scrollbarWidth: 'thin',
+        scrollbarColor: 'rgba(0, 0, 0, 0.2) transparent',
+      }}>
+        <Container maxWidth="lg" sx={{ py: 3 }}>
+          {alert.message && (
+            <Alert 
+              severity={alert.type} 
+              sx={{ mb: 2 }}
+              onClose={() => setAlert({ type: '', message: '' })}
+            >
+              {alert.message}
+            </Alert>
           )}
-          <Typography variant="body1" mb={2}>{selectedPost?.data}</Typography>
-          <Typography variant="caption" color="text.secondary">
-            By {selectedPost?.user?.username || 'Unknown'} in {selectedPost?.category?.name || 'Uncategorized'}
-          </Typography>
-        </DialogContent>
-      </Dialog>
+          
+          {fetching ? (
+            <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+              <CircularProgress />
+            </Box>
+          ) : (
+            <PostsGrid 
+              posts={filteredPosts} 
+              onLike={handleLike}
+              onCommentClick={handleOpenComments}
+            />
+          )}
+        </Container>
+      </Box>
+
+      <PostForm
+        open={createDialogOpen}
+        onClose={() => {
+          setCreateDialogOpen(false);
+          setLoading(false);
+        }}
+        onSubmit={handleCreate}
+        categories={categories}
+        loading={loading}
+      />
+
+      <CommentsDrawer
+        open={commentsOpen}
+        onClose={() => setCommentsOpen(false)}
+        postId={selectedPostId}
+        onCommentAdded={() => fetchPosts()}
+      />
     </Box>
   );
 };
