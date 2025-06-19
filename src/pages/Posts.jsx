@@ -21,6 +21,9 @@ import {
   Container,
   Paper,
   InputAdornment,
+  CardActions,
+  IconButton,
+  Chip,
 } from '@mui/material';
 import api from '../api/axios';
 import { useAuth } from '../contexts/AuthContext';
@@ -34,40 +37,99 @@ import CommentsDrawer from '../components/CommentsDrawer';
 import SearchIcon from '@mui/icons-material/Search';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import AddIcon from '@mui/icons-material/Add';
+import { ThumbUp as ThumbUpIcon, Comment as CommentIcon } from '@mui/icons-material';
+import ArticleIcon from '@mui/icons-material/Article';
 
 const Posts = () => {
   const { user, loadingUser } = useAuth();
 
   const [posts, setPosts] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [openForm, setOpenForm] = useState(false);
-  const [editingPost, setEditingPost] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [alert, setAlert] = useState({ type: '', message: '' });
-  const [fetching, setFetching] = useState(true);
-  const [searchTitle, setSearchTitle] = useState('');
-  const [searchCategory, setSearchCategory] = useState('');
+  const [loading, setLoading] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [categoriesLoading, setCategoriesLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [alert, setAlert] = useState(null);
+  const [postStats, setPostStats] = useState({});
+  const [fetching, setFetching] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [selectedPostId, setSelectedPostId] = useState(null);
+  const [likedPosts, setLikedPosts] = useState(new Set());
+  const [searchTitle, setSearchTitle] = useState('');
+  const [searchCategory, setSearchCategory] = useState('');
+  const [categories, setCategories] = useState([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
+  const [totalStats, setTotalStats] = useState({
+    totalPosts: 0,
+    totalLikes: 0,
+    totalComments: 0
+  });
 
   useEffect(() => {
-    fetchPosts();
+    fetchAllPosts();
     fetchCategories();
   }, []);
 
-  const fetchPosts = async () => {
+  useEffect(() => {
+    if (!user?.id) {
+      setLikedPosts(new Set());
+    }
+  }, [user]);
+
+  const fetchAllPosts = async () => {
     setFetching(true);
     try {
-      const res = await api.get('/api/posts');
-      const postsData = Array.isArray(res.data) 
-        ? res.data 
-        : res.data.posts || res.data.data || [];
-      setPosts(postsData);
+      const response = await api.get('/api/posts');
+      let postsData = [];
+      
+      // Handle different response structures
+      if (response.data) {
+        if (response.data.data && Array.isArray(response.data.data)) {
+          postsData = response.data.data;
+        } else if (Array.isArray(response.data)) {
+          postsData = response.data;
+        } else if (response.data.posts && Array.isArray(response.data.posts)) {
+          postsData = response.data.posts;
+        }
+      }
+
+      // Validate and normalize posts data
+      const validPosts = postsData
+        .filter(post => post && (post.id || post.postId || post._id))
+        .map(post => ({
+          ...post,
+          id: post.id || post.postId || post._id,
+          title: post.title || 'Untitled Post',
+          data: post.data || post.content || '',
+          postImage: post.postImage || post.imageUrl || null,
+          category: post.category || { name: 'Uncategorized' },
+          user: post.user || { username: 'Anonymous' }
+        }));
+      
+      setPosts(validPosts);
+      
+      // Fetch stats for all posts
+      const statsPromises = validPosts.map(post => fetchPostStats(post.id));
+      await Promise.all(statsPromises);
+
+      // Update liked posts if user is logged in
+      if (user?.id) {
+        const newLikedPosts = new Set();
+        validPosts.forEach(post => {
+          if (post.likedBy && Array.isArray(post.likedBy)) {
+            const hasLiked = post.likedBy.some(like => like.id === user.id);
+            if (hasLiked) {
+              newLikedPosts.add(post.id);
+            }
+          }
+        });
+        setLikedPosts(newLikedPosts);
+      }
     } catch (error) {
       console.error('Error fetching posts:', error);
-      setAlert({ type: 'error', message: 'Failed to fetch posts' });
+      setAlert({ 
+        type: 'error', 
+        message: error.response?.data?.message || 'Failed to fetch posts. Please try again later.' 
+      });
+      setPosts([]); // Set empty array on error to prevent undefined state
     } finally {
       setFetching(false);
     }
@@ -76,16 +138,68 @@ const Posts = () => {
   const fetchCategories = async () => {
     setCategoriesLoading(true);
     try {
-      const res = await api.get('/api/category');
-      const categoriesData = Array.isArray(res.data) 
-        ? res.data 
-        : res.data.categories || res.data.data || [];
-      setCategories(categoriesData);
+      const response = await api.get('/api/category');
+      console.log('Categories response:', response.data); // Debug log
+      
+      let categoriesData = [];
+      
+      // Handle different response structures
+      if (response.data) {
+        if (response.data.data && Array.isArray(response.data.data)) {
+          categoriesData = response.data.data;
+        } else if (Array.isArray(response.data)) {
+          categoriesData = response.data;
+        } else if (response.data.categories && Array.isArray(response.data.categories)) {
+          categoriesData = response.data.categories;
+        }
+      }
+
+      // Validate and normalize categories data
+      const validCategories = categoriesData
+        .filter(category => category && (category.id || category._id))
+        .map(category => ({
+          id: category.id || category._id,
+          name: category.name || 'Uncategorized',
+          description: category.description || ''
+        }));
+
+      console.log('Processed categories:', validCategories); // Debug log
+      setCategories(validCategories);
     } catch (error) {
       console.error('Error fetching categories:', error);
-      setAlert({ type: 'error', message: 'Failed to fetch categories' });
+      setAlert({ 
+        type: 'error', 
+        message: error.response?.data?.message || 'Failed to fetch categories. Please try again later.' 
+      });
+      setCategories([]); // Set empty array on error
     } finally {
       setCategoriesLoading(false);
+    }
+  };
+
+  // Add retry mechanism for categories
+  const retryFetchCategories = async (retries = 3, delay = 1000) => {
+    for (let i = 0; i < retries; i++) {
+      try {
+        await fetchCategories();
+        return; // Success, exit the retry loop
+      } catch (error) {
+        if (i === retries - 1) throw error; // Last retry failed
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  };
+
+  const fetchPostStats = async (postId) => {
+    if (!postId) return;
+    try {
+      const response = await api.get(`/api/posts/${postId}/stats`);
+      setPostStats(prev => ({
+        ...prev,
+        [postId]: response.data.data || { likes: 0, comments: 0 }
+      }));
+    } catch (error) {
+      console.error('Error fetching post stats:', error);
     }
   };
 
@@ -104,7 +218,7 @@ const Posts = () => {
       });
       setCreateDialogOpen(false);
       setAlert({ type: 'success', message: 'Post created successfully!' });
-      await fetchPosts();
+      await fetchAllPosts();
     } catch (error) {
       console.error('Error creating post:', error);
       setAlert({ type: 'error', message: 'Failed to create post' });
@@ -121,12 +235,45 @@ const Posts = () => {
   });
 
   const handleLike = async (postId) => {
-    if (!user || !user.id) return;
+    if (!user?.id) {
+      setAlert({ type: 'error', message: 'Please login to like posts' });
+      return;
+    }
+
     try {
-      await api.post(`/api/posts/${postId}/like`);
-      fetchPosts();
+      const response = await api.post(`/api/posts/${postId}/like/user/${user.id}`);
+      const isLiked = response.data.data === 1;
+      
+      // Update liked posts state
+      setLikedPosts(prev => {
+        const newSet = new Set(prev);
+        if (isLiked) {
+          newSet.add(postId);
+        } else {
+          newSet.delete(postId);
+        }
+        return newSet;
+      });
+
+      // Update the post's likedBy array in the posts state
+      setPosts(prev => prev.map(post => {
+        if (post.id === postId) {
+          const likedBy = post.likedBy || [];
+          return {
+            ...post,
+            likedBy: isLiked 
+              ? [...likedBy, { id: user.id, email: user.email, username: user.username }]
+              : likedBy.filter(like => like.id !== user.id)
+          };
+        }
+        return post;
+      }));
+
+      // Fetch updated stats
+      await fetchPostStats(postId);
     } catch (error) {
       console.error('Error liking post:', error);
+      setAlert({ type: 'error', message: 'Failed to like post' });
     }
   };
 
@@ -291,18 +438,18 @@ const Posts = () => {
         scrollbarColor: 'rgba(0, 0, 0, 0.2) transparent',
       }}>
         <Container maxWidth="lg" sx={{ py: 3 }}>
-          {alert.message && (
+          {alert && (
             <Alert 
               severity={alert.type} 
+              onClose={() => setAlert(null)}
               sx={{ mb: 2 }}
-              onClose={() => setAlert({ type: '', message: '' })}
             >
               {alert.message}
             </Alert>
           )}
-          
+
           {fetching ? (
-            <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
               <CircularProgress />
             </Box>
           ) : (
@@ -310,6 +457,8 @@ const Posts = () => {
               posts={filteredPosts} 
               onLike={handleLike}
               onCommentClick={handleOpenComments}
+              postStats={postStats}
+              likedPosts={likedPosts}
             />
           )}
         </Container>
@@ -322,7 +471,6 @@ const Posts = () => {
           setLoading(false);
         }}
         onSubmit={handleCreate}
-        categories={categories}
         loading={loading}
       />
 
@@ -330,7 +478,11 @@ const Posts = () => {
         open={commentsOpen}
         onClose={() => setCommentsOpen(false)}
         postId={selectedPostId}
-        onCommentAdded={() => fetchPosts()}
+        onCommentAdded={() => {
+          if (selectedPostId) {
+            fetchPostStats(selectedPostId);
+          }
+        }}
       />
     </Box>
   );

@@ -18,8 +18,15 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow, isValid } from 'date-fns';
+import PropTypes from 'prop-types';
 
-const PostsGrid = ({ posts, onLike, onCommentClick }) => {
+const PostsGrid = ({ 
+  posts = [], 
+  onLike = () => {}, 
+  onCommentClick = () => {}, 
+  postStats = {}, 
+  likedPosts = new Set() 
+}) => {
   const navigate = useNavigate();
 
   const handlePostClick = (post) => {
@@ -83,18 +90,18 @@ const PostsGrid = ({ posts, onLike, onCommentClick }) => {
             }
 
             return (
-              <Grid key={postId} xs={12} sm={6} md={4} lg={3}>
+              <Grid item key={postId} xs={12} sm={6} md={4} lg={3}>
                 <Card 
                   sx={{ 
                     height: '100%', 
                     display: 'flex', 
                     flexDirection: 'column',
-                    transition: 'transform 0.2s',
+                    transition: 'transform 0.2s, box-shadow 0.2s',
                     maxWidth: 320,
                     mx: 'auto',
                     '&:hover': {
                       transform: 'translateY(-4px)',
-                      boxShadow: 3,
+                      boxShadow: 4,
                     },
                   }}
                 >
@@ -110,7 +117,7 @@ const PostsGrid = ({ posts, onLike, onCommentClick }) => {
                     {(post.postImage || post.imageUrl) && (
                       <CardMedia
                         component="img"
-                        height="160"
+                        height="200"
                         image={post.postImage || post.imageUrl}
                         alt={post.title || 'Post image'}
                         sx={{
@@ -139,23 +146,22 @@ const PostsGrid = ({ posts, onLike, onCommentClick }) => {
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
                           display: '-webkit-box',
-                          WebkitLineClamp: 2,
+                          WebkitLineClamp: 3,
                           WebkitBoxOrient: 'vertical',
-                          mb: 1.5,
+                          mb: 2,
                           fontSize: '0.875rem',
                           lineHeight: 1.4,
                         }}
                       >
                         {post.data || post.content || 'No content available'}
                       </Typography>
-                      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+                      <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
                         {post.category && (
                           <Chip
                             label={post.category.name || 'Uncategorized'}
                             size="small"
                             color="primary"
                             variant="outlined"
-                            sx={{ height: 24 }}
                           />
                         )}
                         {post.user && (
@@ -163,61 +169,65 @@ const PostsGrid = ({ posts, onLike, onCommentClick }) => {
                             label={`By ${post.user.username || 'Anonymous'}`}
                             size="small"
                             variant="outlined"
-                            sx={{ height: 24 }}
                           />
                         )}
-                        <Typography variant="caption" color="text.secondary" sx={{ ml: 'auto' }}>
-                          {formatDate(post.createdAt || post.created_at)}
-                        </Typography>
+                      </Box>
+                      <Box sx={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: 2,
+                        mt: 'auto',
+                        pt: 2,
+                        borderTop: 1,
+                        borderColor: 'divider'
+                      }}>
+                        <Tooltip title={likedPosts.has(postId) ? "Unlike" : "Like"}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <IconButton 
+                              size="small" 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onLike(postId);
+                              }}
+                              color={likedPosts.has(postId) ? 'primary' : 'default'}
+                              sx={{
+                                transition: 'transform 0.2s',
+                                '&:hover': {
+                                  transform: 'scale(1.1)',
+                                },
+                              }}
+                            >
+                              <ThumbUpIcon />
+                            </IconButton>
+                            <Typography variant="body2">
+                              {postStats[postId]?.likes || 0}
+                            </Typography>
+                          </Box>
+                        </Tooltip>
+                        <Tooltip title="View Comments">
+                          <Box 
+                            sx={{ 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              gap: 0.5,
+                              cursor: 'pointer',
+                              '&:hover': {
+                                color: 'primary.main',
+                              },
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onCommentClick(postId);
+                            }}
+                          >
+                            <CommentIcon fontSize="small" color="action" />
+                            <Typography variant="body2">
+                              {postStats[postId]?.comments || 0}
+                            </Typography>
+                          </Box>
+                        </Tooltip>
                       </Box>
                     </CardContent>
-                  </Box>
-                  <Box sx={{ 
-                    p: 1, 
-                    display: 'flex', 
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    borderTop: '1px solid',
-                    borderColor: 'divider'
-                  }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <IconButton 
-                        size="small" 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onLike(postId);
-                        }}
-                        color={post.isLiked ? "primary" : "default"}
-                      >
-                        {post.isLiked ? <ThumbUpIcon /> : <ThumbUpOutlinedIcon />}
-                      </IconButton>
-                      <Typography variant="body2" color="text.secondary">
-                        {post.likes || 0}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Tooltip title="View Comments">
-                        <IconButton 
-                          size="small" 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onCommentClick(postId);
-                          }}
-                          sx={{
-                            color: 'primary.main',
-                            '&:hover': {
-                              bgcolor: 'primary.light',
-                              color: 'white',
-                            },
-                          }}
-                        >
-                          <CommentIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Typography variant="body2" color="text.secondary">
-                        {post.comments?.length || 0}
-                      </Typography>
-                    </Box>
                   </Box>
                 </Card>
               </Grid>
@@ -227,6 +237,29 @@ const PostsGrid = ({ posts, onLike, onCommentClick }) => {
       </Box>
     </Container>
   );
+};
+
+PostsGrid.propTypes = {
+  posts: PropTypes.arrayOf(PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    postId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    _id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    title: PropTypes.string,
+    data: PropTypes.string,
+    content: PropTypes.string,
+    postImage: PropTypes.string,
+    imageUrl: PropTypes.string,
+    category: PropTypes.shape({
+      name: PropTypes.string
+    }),
+    user: PropTypes.shape({
+      username: PropTypes.string
+    })
+  })),
+  onLike: PropTypes.func,
+  onCommentClick: PropTypes.func,
+  postStats: PropTypes.object,
+  likedPosts: PropTypes.instanceOf(Set)
 };
 
 export default PostsGrid; 
