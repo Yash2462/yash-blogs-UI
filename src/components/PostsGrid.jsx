@@ -1,61 +1,110 @@
-import React from 'react';
-import { 
-  Card, 
-  CardContent, 
-  CardMedia, 
-  Typography, 
-  IconButton, 
+import React, { useEffect, useState } from 'react';
+import {
+  Card,
+  CardContent,
+  CardMedia,
+  Typography,
+  IconButton,
   Box,
   Grid,
   Container,
   Chip,
-  Tooltip
+  Tooltip,
 } from '@mui/material';
-import { 
-  Comment as CommentIcon,
-  ThumbUp as ThumbUpIcon,
-  ThumbUpOutlined as ThumbUpOutlinedIcon
+import {
+  Favorite,
+  FavoriteBorder,
+  ChatBubbleOutline,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow, isValid } from 'date-fns';
 import PropTypes from 'prop-types';
+import api from '../api/axios';
+import { useAuth } from '../contexts/AuthContext';
 
-const PostsGrid = ({ 
-  posts = [], 
-  onLike = () => {}, 
-  onCommentClick = () => {}, 
-  postStats = {}, 
-  likedPosts = new Set() 
-}) => {
+const PostsGrid = ({ posts = [] }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [postStats, setPostStats] = useState({});
+  const [likedPosts, setLikedPosts] = useState(new Set());
 
-  const handlePostClick = (post) => {
-    if (!post) return;
-    
-    // Get the post ID from any of the possible fields
-    const postId = post._id || post.id || post.postId;
-    if (!postId) {
-      console.error('Post has no ID:', post);
-      return;
+  useEffect(() => {
+    const initialLikedPosts = new Set();
+    if (user && posts.length > 0) {
+      posts.forEach((post) => {
+        const postId = post._id || post.id || post.postId;
+        if (post.likedBy?.some((like) => like.id === user.id)) {
+          initialLikedPosts.add(postId);
+        }
+      });
+      setLikedPosts(initialLikedPosts);
     }
 
-    console.log('Navigating to post:', postId); // Debug log
-    navigate(`/posts/${postId}`);
+    const fetchAllStats = async () => {
+      if (posts.length === 0) return;
+      const newStats = {};
+      for (const post of posts) {
+        const postId = post._id || post.id || post.postId;
+        if (postId && !postStats[postId]) {
+          try {
+            const response = await api.get(`/api/posts/${postId}/stats`);
+            newStats[postId] = response.data.data || { likes: 0, comments: 0 };
+          } catch (error) {
+            console.error(`Failed to fetch stats for post ${postId}`, error);
+            newStats[postId] = { likes: 0, comments: 0 };
+          }
+        }
+      }
+      if (Object.keys(newStats).length > 0) {
+        setPostStats((prev) => ({ ...prev, ...newStats }));
+      }
+    };
+
+    fetchAllStats();
+  }, [posts, user]);
+
+  const handleLikeClick = async (e, postId) => {
+    e.stopPropagation();
+    if (!user) return;
+
+    const wasLiked = likedPosts.has(postId);
+    const originalStats = { ...postStats };
+    const originalLikedPosts = new Set(likedPosts);
+
+    setLikedPosts((prev) => {
+      const newSet = new Set(prev);
+      if (wasLiked) newSet.delete(postId);
+      else newSet.add(postId);
+      return newSet;
+    });
+
+    setPostStats((prev) => ({
+      ...prev,
+      [postId]: {
+        ...prev[postId],
+        likes: (prev[postId]?.likes || 0) + (wasLiked ? -1 : 1),
+      },
+    }));
+
+    try {
+      await api.post(`/api/posts/${postId}/like/user/${user.id}`);
+    } catch (error) {
+      console.error('Failed to update like status', error);
+      setPostStats(originalStats);
+      setLikedPosts(originalLikedPosts);
+    }
+  };
+
+  const handlePostClick = (post) => {
+    const postId = post._id || post.id || post.postId;
+    if (postId) {
+      navigate(`/posts/${postId}`);
+    }
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return 'No date';
-    
-    try {
-      const date = new Date(dateString);
-      if (!isValid(date)) {
-        return 'Invalid date';
-      }
-      return formatDistanceToNow(date, { addSuffix: true });
-    } catch (error) {
-      console.error('Error formatting date:', error);
-      return 'Invalid date';
-    }
+    if (!dateString || !isValid(new Date(dateString))) return 'No date';
+    return formatDistanceToNow(new Date(dateString), { addSuffix: true });
   };
 
   if (!posts || posts.length === 0) {
@@ -72,29 +121,28 @@ const PostsGrid = ({
 
   return (
     <Container maxWidth="lg">
-      <Box sx={{ 
-        width: '100%',
-        overflow: 'auto',
-        '&::-webkit-scrollbar': {
-          display: 'none'
-        },
-        '-ms-overflow-style': 'none',
-        'scrollbarWidth': 'none',
-      }}>
+      <Box
+        sx={{
+          width: '100%',
+          overflow: 'auto',
+          '&::-webkit-scrollbar': { display: 'none' },
+          '-ms-overflow-style': 'none',
+          'scrollbar-width': 'none',
+        }}
+      >
         <Grid container spacing={2} sx={{ p: 1 }}>
           {posts.map((post) => {
             const postId = post._id || post.id || post.postId;
-            if (!postId) {
-              console.warn('Post missing ID:', post);
-              return null;
-            }
+            if (!postId) return null;
+            const isLiked = likedPosts.has(postId);
+            const stats = postStats[postId] || { likes: 0, comments: 0 };
 
             return (
               <Grid item key={postId} xs={12} sm={6} md={4} lg={3}>
-                <Card 
-                  sx={{ 
-                    height: '100%', 
-                    display: 'flex', 
+                <Card
+                  sx={{
+                    height: '100%',
+                    display: 'flex',
                     flexDirection: 'column',
                     transition: 'transform 0.2s, box-shadow 0.2s',
                     maxWidth: 320,
@@ -105,13 +153,13 @@ const PostsGrid = ({
                     },
                   }}
                 >
-                  <Box 
+                  <Box
                     onClick={() => handlePostClick(post)}
-                    sx={{ 
+                    sx={{
                       cursor: 'pointer',
                       flexGrow: 1,
                       display: 'flex',
-                      flexDirection: 'column'
+                      flexDirection: 'column',
                     }}
                   >
                     {(post.postImage || post.imageUrl) && (
@@ -120,21 +168,32 @@ const PostsGrid = ({
                         height="200"
                         image={post.postImage || post.imageUrl}
                         alt={post.title || 'Post image'}
-                        sx={{
-                          objectFit: 'cover',
-                        }}
+                        sx={{ objectFit: 'cover' }}
                       />
                     )}
-                    <CardContent sx={{ flexGrow: 1, p: 2 }}>
-                      <Typography 
-                        gutterBottom 
-                        variant="h6" 
-                        component="h2" 
-                        noWrap
-                        sx={{ 
-                          fontSize: '1rem',
+                    <CardContent sx={{ flexGrow: 1, p: 2, display: 'flex', flexDirection: 'column' }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+                        <Chip
+                          label={post.category?.name || 'Uncategorized'}
+                          size="small"
+                          color="primary"
+                        />
+                        <Typography variant="caption" color="text.secondary">
+                          {formatDate(post.createdAt || post.updatedAt)}
+                        </Typography>
+                      </Box>
+                      <Typography
+                        gutterBottom
+                        variant="h6"
+                        component="h2"
+                        sx={{
                           fontWeight: 600,
-                          mb: 1
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          minHeight: '3rem',
                         }}
                       >
                         {post.title || 'Untitled Post'}
@@ -148,84 +207,55 @@ const PostsGrid = ({
                           display: '-webkit-box',
                           WebkitLineClamp: 3,
                           WebkitBoxOrient: 'vertical',
+                          flexGrow: 1,
                           mb: 2,
-                          fontSize: '0.875rem',
-                          lineHeight: 1.4,
                         }}
                       >
                         {post.data || post.content || 'No content available'}
                       </Typography>
-                      <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
-                        {post.category && (
-                          <Chip
-                            label={post.category.name || 'Uncategorized'}
-                            size="small"
-                            color="primary"
-                            variant="outlined"
-                          />
-                        )}
-                        {post.user && (
-                          <Chip
-                            label={`By ${post.user.username || 'Anonymous'}`}
-                            size="small"
-                            variant="outlined"
-                          />
-                        )}
-                      </Box>
-                      <Box sx={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: 2,
-                        mt: 'auto',
-                        pt: 2,
-                        borderTop: 1,
-                        borderColor: 'divider'
-                      }}>
-                        <Tooltip title={likedPosts.has(postId) ? "Unlike" : "Like"}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <IconButton 
-                              size="small" 
+                      
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          mt: 'auto',
+                          pt: 2,
+                          borderTop: 1,
+                          borderColor: 'divider',
+                        }}
+                      >
+                        <Typography variant="caption" color="text.secondary">
+                          By {post.user?.username || 'Anonymous'}
+                        </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <Tooltip title={isLiked ? 'Unlike' : 'Like'}>
+                            <IconButton
+                              size="small"
+                              onClick={(e) => handleLikeClick(e, postId)}
+                            >
+                              {isLiked ? (
+                                <Favorite sx={{ color: 'red', fontSize: '1.2rem' }} />
+                              ) : (
+                                <FavoriteBorder sx={{ fontSize: '1.2rem' }} />
+                              )}
+                            </IconButton>
+                          </Tooltip>
+                          <Typography variant="body2" sx={{ mr: 1.5 }}>{stats.likes}</Typography>
+                          
+                          <Tooltip title="View Comments">
+                            <IconButton
+                              size="small"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                onLike(postId);
-                              }}
-                              color={likedPosts.has(postId) ? 'primary' : 'default'}
-                              sx={{
-                                transition: 'transform 0.2s',
-                                '&:hover': {
-                                  transform: 'scale(1.1)',
-                                },
+                                handlePostClick(post);
                               }}
                             >
-                              <ThumbUpIcon />
+                              <ChatBubbleOutline sx={{ fontSize: '1.2rem' }} color="action" />
                             </IconButton>
-                            <Typography variant="body2">
-                              {postStats[postId]?.likes || 0}
-                            </Typography>
-                          </Box>
-                        </Tooltip>
-                        <Tooltip title="View Comments">
-                          <Box 
-                            sx={{ 
-                              display: 'flex', 
-                              alignItems: 'center', 
-                              gap: 0.5,
-                              cursor: 'pointer',
-                              '&:hover': {
-                                color: 'primary.main',
-                              },
-                            }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onCommentClick(postId);
-                            }}
-                          >
-                            <CommentIcon fontSize="small" color="action" />
-                            <Typography variant="body2">
-                              {postStats[postId]?.comments || 0}
-                            </Typography>
-                          </Box>
-                        </Tooltip>
+                          </Tooltip>
+                          <Typography variant="body2">{stats.comments}</Typography>
+                        </Box>
                       </Box>
                     </CardContent>
                   </Box>
@@ -240,26 +270,21 @@ const PostsGrid = ({
 };
 
 PostsGrid.propTypes = {
-  posts: PropTypes.arrayOf(PropTypes.shape({
-    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    postId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    _id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    title: PropTypes.string,
-    data: PropTypes.string,
-    content: PropTypes.string,
-    postImage: PropTypes.string,
-    imageUrl: PropTypes.string,
-    category: PropTypes.shape({
-      name: PropTypes.string
-    }),
-    user: PropTypes.shape({
-      username: PropTypes.string
+  posts: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+      postId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+      _id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+      title: PropTypes.string,
+      data: PropTypes.string,
+      content: PropTypes.string,
+      postImage: PropTypes.string,
+      imageUrl: PropTypes.string,
+      category: PropTypes.shape({ name: PropTypes.string }),
+      user: PropTypes.shape({ username: PropTypes.string }),
+      likedBy: PropTypes.array,
     })
-  })),
-  onLike: PropTypes.func,
-  onCommentClick: PropTypes.func,
-  postStats: PropTypes.object,
-  likedPosts: PropTypes.instanceOf(Set)
+  ),
 };
 
 export default PostsGrid; 
