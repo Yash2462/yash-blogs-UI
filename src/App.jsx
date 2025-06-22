@@ -6,6 +6,8 @@ import Dashboard from './pages/Dashboard';
 import Posts from './pages/Posts';
 import Comments from './pages/Comments';
 import PostDetail from './pages/PostDetail';
+import CreatePost from './pages/CreatePost';
+import Profile from './pages/Profile';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import './App.css';
 import { jwtDecode } from 'jwt-decode';
@@ -18,13 +20,13 @@ function PageWrapper({ children }) {
       height: '100vh',
       display: 'flex',
       flexDirection: 'column',
-      overflow: 'hidden', // Prevent body scroll
+      overflow: 'hidden',
     }}>
       <Box sx={{
         pt: { xs: '64px', md: '72px' }, // Match navbar height
+        display: 'flex',
         height: '100%',
         overflow: 'hidden',
-        display: 'flex',
         flexDirection: 'column',
       }}>
         {children}
@@ -54,8 +56,10 @@ function AppRoutes() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/posts" element={<ProtectedRoute><Posts /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         <Route path="/posts/:postId" element={<ProtectedRoute><PostDetail /></ProtectedRoute>} />
         <Route path="/comments" element={<ProtectedRoute><Comments /></ProtectedRoute>} />
+        <Route path="/create-post" element={<ProtectedRoute><CreatePost /></ProtectedRoute>} />
         <Route path="*" element={<Navigate to="/login" />} />
       </Routes>
     </>

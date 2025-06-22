@@ -13,23 +13,23 @@ import ListItemText from '@mui/material/ListItemText';
 import Divider from '@mui/material/Divider';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
-import useScrollTrigger from '@mui/material/useScrollTrigger';
-import Slide from '@mui/material/Slide';
+import { Home, Add, Person, Logout } from '@mui/icons-material';
+import SvgIcon from '@mui/material/SvgIcon';
 
 const navLinks = [
-  { to: '/dashboard', label: 'Dashboard' },
-  { to: '/posts', label: 'Posts' },
+  { to: '/posts', label: 'Home', icon: <Home sx={{ fontSize: 20 }} /> },
+  { to: '/create-post', label: 'Write', icon: <Add sx={{ fontSize: 20 }} /> },
+  { to: '/profile', label: 'Profile', icon: <Person sx={{ fontSize: 20 }} /> },
 ];
 
-function HideOnScroll({ children }) {
-  const trigger = useScrollTrigger();
+function BlogSpaceIcon(props) {
   return (
-    <Slide appear={false} direction="down" in={!trigger}>
-      {children}
-    </Slide>
+    <SvgIcon {...props}>
+      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v2H7v-2.15c0-1.69 1.36-3.05 3.05-3.05h.9c.35 0 .68.06.99.16l2.1 6.3c-.63.29-1.31.48-2.04.57zM17.05 18c-.31-.63-.7-1.19-1.14-1.69l-2.01-2.01c.2-.7.3-1.44.3-2.22 0-3.31-2.69-6-6-6-.05 0-.09.01-.14.01L6.1 4.2c1.58-.79 3.39-1.2 5.3-1.2 4.41 0 8 3.59 8 8 0 1.98-.71 3.78-1.87 5.17l-.18.23z" />
+    </SvgIcon>
   );
 }
 
@@ -45,230 +45,142 @@ const Navbar = () => {
     navigate('/login');
   };
 
-  // Prevent horizontal scroll on mobile by setting body overflow-x hidden
-  useEffect(() => {
-    const style = document.createElement('style');
-    style.innerHTML = `@media (max-width: 900px) { body { overflow-x: hidden !important; } }`;
-    document.head.appendChild(style);
-    return () => { document.head.removeChild(style); };
-  }, []);
+  const drawer = (
+    <Box onClick={() => setDrawerOpen(false)} sx={{ textAlign: 'center' }}>
+      <Typography variant="h6" sx={{ my: 2, fontWeight: 'bold' }}>
+        BlogSpace
+      </Typography>
+      <Divider />
+      <List>
+        {navLinks.map((item) => (
+          <ListItem key={item.to} disablePadding>
+            <ListItemButton sx={{ textAlign: 'left' }} component={NavLink} to={item.to}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                {item.icon}
+                <ListItemText primary={item.label} />
+              </Box>
+            </ListItemButton>
+          </ListItem>
+        ))}
+      </List>
+      <Divider />
+      <Button
+        fullWidth
+        variant="text"
+        onClick={handleLogout}
+        sx={{
+          justifyContent: 'flex-start',
+          gap: 2,
+          p: '10px 16px',
+          textTransform: 'none',
+          color: 'text.secondary',
+        }}
+      >
+        <Logout sx={{ fontSize: 20 }} />
+        Logout
+      </Button>
+    </Box>
+  );
 
   return (
-    <HideOnScroll>
+    <>
       <AppBar
         position="fixed"
         color="inherit"
         elevation={0}
         sx={{
+          bgcolor: 'white',
           borderBottom: '1px solid',
-          borderColor: 'rgba(0, 0, 0, 0.08)',
-          background: 'rgba(255, 255, 255, 0.95)',
-          backdropFilter: 'blur(8px)',
-          width: '100%',
-          zIndex: (theme) => theme.zIndex.drawer + 1,
+          borderColor: 'grey.200',
         }}
       >
         <Toolbar
           sx={{
-            minHeight: { xs: 64, md: 72 },
-            width: '100%',
-            px: { xs: 2, md: 3 },
-            display: 'flex',
             justifyContent: 'space-between',
-            alignItems: 'center',
-            boxSizing: 'border-box',
+            height: 64,
           }}
         >
-          {/* Left: Blog App title */}
-          <Typography
-            variant="h5"
+          <Box
             component={NavLink}
-            to="/dashboard"
+            to="/posts"
             sx={{
-              fontWeight: 'bold',
-              letterSpacing: 1,
-              color: 'primary.main',
+              display: 'flex',
+              alignItems: 'center',
               textDecoration: 'none',
-              fontSize: { xs: 22, md: 26 },
-              '&:hover': {
-                color: 'primary.dark',
-              },
+              color: 'inherit',
+              flexBasis: { xs: 'auto', md: '200px' },
+              flexShrink: 0,
             }}
           >
-            Blog App
-          </Typography>
+            <BlogSpaceIcon sx={{ color: '#4A90E2', mr: 1, fontSize: 32 }} />
+            <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 'bold' }}>
+              BlogSpace
+            </Typography>
+          </Box>
 
-          {/* Nav links and logout (desktop) */}
-          {!isMobile && user && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              {navLinks.map(link => (
-                <Button
-                  key={link.to}
-                  component={NavLink}
-                  to={link.to}
-                  sx={({ isActive }) => ({
-                    color: isActive ? 'primary.main' : 'text.secondary',
-                    fontWeight: isActive ? 600 : 500,
-                    borderBottom: isActive ? '2px solid' : '2px solid transparent',
-                    borderColor: isActive ? 'primary.main' : 'transparent',
-                    borderRadius: '2px',
-                    px: 2,
-                    py: 1,
-                    background: 'none',
-                    textTransform: 'none',
-                    fontSize: 16,
-                    transition: 'all 0.2s',
-                    '&:hover': {
-                      backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                      borderColor: isActive ? 'primary.main' : 'rgba(0, 0, 0, 0.12)',
-                    },
-                  })}
-                >
-                  {link.label}
-                </Button>
-              ))}
-              <Button 
-                variant="outlined" 
-                color="primary" 
-                onClick={handleLogout} 
-                sx={{ 
-                  ml: 1,
-                  borderRadius: 2, 
-                  textTransform: 'none', 
-                  fontWeight: 600, 
-                  px: 3,
-                  '&:hover': {
-                    backgroundColor: 'primary.main',
-                    color: 'white',
-                  }
-                }}
-              >
-                Logout
-              </Button>
-            </Box>
-          )}
-
-          {/* Hamburger menu (mobile) */}
-          {isMobile && user && (
+          {isMobile ? (
+            <IconButton
+              color="inherit"
+              aria-label="open drawer"
+              edge="end"
+              onClick={() => setDrawerOpen(true)}
+            >
+              <MenuIcon />
+            </IconButton>
+          ) : (
             <>
-              <IconButton 
-                edge="end" 
-                color="inherit" 
-                aria-label="menu" 
-                onClick={() => setDrawerOpen(true)} 
-                sx={{ 
-                  fontSize: 24,
-                  color: 'primary.main',
-                  '&:hover': {
-                    backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                  }
-                }}
-              >
-                <MenuIcon fontSize="inherit" />
-              </IconButton>
-              <Drawer 
-                anchor="right" 
-                open={drawerOpen} 
-                onClose={() => setDrawerOpen(false)}
-                PaperProps={{ 
-                  sx: { 
-                    width: '100%', 
-                    maxWidth: 300,
-                    borderTopLeftRadius: 16,
-                    borderBottomLeftRadius: 16,
-                    boxShadow: 3,
-                    height: '100%',
-                    top: 0,
-                    right: 0,
-                  } 
-                }}
-                sx={{
-                  '& .MuiDrawer-paper': {
-                    top: 0,
-                    height: '100%',
-                  },
-                  '& .MuiBackdrop-root': {
-                    top: 0,
-                    height: '100%',
-                  }
-                }}
-                ModalProps={{
-                  container: document.body,
-                  style: { position: 'absolute' }
-                }}
-              >
-                <Box 
-                  sx={{ 
-                    width: '100%', 
-                    p: 3,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    height: '100%',
-                    boxSizing: 'border-box',
-                    position: 'relative',
-                  }} 
-                  role="presentation" 
-                  onClick={() => setDrawerOpen(false)}
-                >
-                  <Typography
-                    variant="h6"
+              <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', gap: 1 }}>
+                {navLinks.map((item) => (
+                  <Button
+                    key={item.label}
+                    component={NavLink}
+                    to={item.to}
+                    startIcon={item.icon}
                     sx={{
-                      fontWeight: 'bold',
-                      color: 'primary.main',
-                      mb: 3,
-                    }}
-                  >
-                    Menu
-                  </Typography>
-                  <List sx={{ flex: 1 }}>
-                    {navLinks.map(link => (
-                      <ListItem key={link.to} disablePadding sx={{ mb: 1 }}>
-                        <ListItemButton 
-                          component={NavLink} 
-                          to={link.to} 
-                          sx={({ isActive }) => ({
-                            py: 1.5,
-                            borderRadius: 2,
-                            backgroundColor: isActive ? 'rgba(0, 0, 0, 0.04)' : 'transparent',
-                            '&:hover': {
-                              backgroundColor: 'rgba(0, 0, 0, 0.08)',
-                            }
-                          })}
-                        >
-                          <ListItemText 
-                            primary={link.label} 
-                            primaryTypographyProps={{ 
-                              fontSize: 16,
-                              fontWeight: 500,
-                            }} 
-                          />
-                        </ListItemButton>
-                      </ListItem>
-                    ))}
-                  </List>
-                  <Divider sx={{ my: 2 }} />
-                  <Button 
-                    variant="contained" 
-                    color="primary" 
-                    onClick={handleLogout} 
-                    sx={{ 
-                      width: '100%', 
-                      py: 1.5, 
-                      fontWeight: 600, 
-                      fontSize: 16,
-                      borderRadius: 2,
                       textTransform: 'none',
+                      color: 'text.secondary',
+                      fontWeight: 500,
+                      '&.active': {
+                        color: 'primary.main',
+                        fontWeight: 'bold',
+                      },
                     }}
                   >
-                    Logout
+                    {item.label}
                   </Button>
-                </Box>
-              </Drawer>
+                ))}
+              </Box>
+              <Box sx={{ flexBasis: '200px', display: 'flex', justifyContent: 'flex-end' }}>
+                <Button
+                  variant="outlined"
+                  startIcon={<Logout />}
+                  onClick={handleLogout}
+                  sx={{ borderRadius: 20, textTransform: 'none' }}
+                >
+                  Logout
+                </Button>
+              </Box>
             </>
           )}
         </Toolbar>
       </AppBar>
-    </HideOnScroll>
+      <nav>
+        <Drawer
+          variant="temporary"
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          ModalProps={{
+            keepMounted: true, // Better open performance on mobile.
+          }}
+          sx={{
+            display: { xs: 'block', md: 'none' },
+            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: 240 },
+          }}
+        >
+          {drawer}
+        </Drawer>
+      </nav>
+    </>
   );
 };
 
