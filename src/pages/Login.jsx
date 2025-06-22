@@ -1,9 +1,19 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { TextField, Button, Box, Typography, Paper, Alert, CircularProgress } from '@mui/material';
+import { useNavigate, Link as RouterLink } from 'react-router-dom';
+import {
+  TextField,
+  Button,
+  Box,
+  Typography,
+  Paper,
+  Alert,
+  CircularProgress,
+  Grid,
+  CssBaseline,
+  Link,
+} from '@mui/material';
 import api from '../api/axios';
 import { useAuth } from '../contexts/AuthContext';
-import Signup from './Signup';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -11,7 +21,6 @@ const Login = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showSignup, setShowSignup] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
 
@@ -40,28 +49,112 @@ const Login = () => {
     }
   };
 
-  if (showSignup) {
-    return <Signup onSwitchToLogin={() => setShowSignup(false)} embedded />;
-  }
   return (
-    <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh" bgcolor="background.default">
-      <Paper elevation={6} sx={{ p: 4, width: 350, bgcolor: 'background.paper' }}>
-        <Typography variant="h4" mb={2} fontWeight="bold" color="primary.main" align="center">Blog App</Typography>
-        <Typography variant="h5" mb={2} fontWeight="bold" color="primary.main" align="center">Login</Typography>
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-        {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
-        <form onSubmit={handleLogin}>
-          <TextField label="Email" type="email" fullWidth margin="normal" value={email} onChange={e => setEmail(e.target.value)} required />
-          <TextField label="Password" type="password" fullWidth margin="normal" value={password} onChange={e => setPassword(e.target.value)} required />
-          <Button type="submit" variant="contained" color="primary" fullWidth sx={{ mt: 2 }} disabled={loading}>
-            {loading ? <CircularProgress size={24} color="inherit" /> : 'Login'}
+    <Grid
+      container
+      component="main"
+      sx={{
+        height: 'calc(100vh - 64px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#f0f4ff',
+      }}
+    >
+      <CssBaseline />
+      <Grid
+        item
+        xs={12}
+        sm={8}
+        md={5}
+        lg={4}
+        component={Paper}
+        elevation={6}
+        sx={{
+          p: 4,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          borderRadius: 2,
+        }}
+      >
+        <Typography component="h1" variant="h5" fontWeight="bold" sx={{ mb: 1 }}>
+          Welcome back
+        </Typography>
+        <Typography component="p" color="text.secondary" sx={{ mb: 3 }}>
+          Enter your credentials to access your account
+        </Typography>
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 2, width: '100%' }}>
+            {error}
+          </Alert>
+        )}
+        {success && (
+          <Alert severity="success" sx={{ mb: 2, width: '100%' }}>
+            {success}
+          </Alert>
+        )}
+
+        <Box
+          component="form"
+          onSubmit={handleLogin}
+          sx={{ mt: 1, width: '100%' }}
+        >
+          <Typography variant="subtitle1" fontWeight="bold" component="label" htmlFor="email" sx={{ display: 'block', mb: 1 , textAlign:'left' }}>Email</Typography>
+          <TextField
+            required
+            fullWidth
+            id="email"
+            placeholder="Enter your email"
+            name="email"
+            autoComplete="email"
+            autoFocus
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            sx={{ mb: 2 }}
+          />
+          <Typography variant="subtitle1" fontWeight="bold" component="label" htmlFor="password" sx={{ display: 'block', mb: 1 , textAlign:'left' }}>Password</Typography>
+          <TextField
+            required
+            fullWidth
+            name="password"
+            placeholder="Enter your password"
+            type="password"
+            id="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <Button
+            type="submit"
+            fullWidth
+            variant="contained"
+            sx={{
+              mt: 3,
+              mb: 2,
+              backgroundColor: '#1e293b',
+              '&:hover': {
+                backgroundColor: '#334155',
+              },
+            }}
+            disabled={loading}
+          >
+            {loading ? (
+              <CircularProgress size={24} color="inherit" />
+            ) : (
+              'Sign in'
+            )}
           </Button>
-        </form>
-        <Button fullWidth sx={{ mt: 2 }} onClick={() => setShowSignup(true)}>
-          Don't have an account? Signup
-        </Button>
-      </Paper>
-    </Box>
+          <Typography align="center">
+            Don't have an account?{' '}
+            <Link component={RouterLink} to="/signup">
+              Sign up
+            </Link>
+          </Typography>
+        </Box>
+      </Grid>
+    </Grid>
   );
 };
 
