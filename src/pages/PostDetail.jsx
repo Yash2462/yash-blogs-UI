@@ -119,10 +119,14 @@ const PostDetail = () => {
   if (loading) {
     return (
       <Box 
-        display="flex" 
-        justifyContent="center" 
-        alignItems="center" 
-        minHeight="calc(100vh - 64px)"
+        sx={{
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          minHeight: '100vh',
+          pt: { xs: '64px', md: '72px' },
+          pb: 4
+        }}
       >
         <CircularProgress />
       </Box>
@@ -134,7 +138,8 @@ const PostDetail = () => {
       <Box 
         sx={{ 
           p: 2,
-          minHeight: 'calc(100vh - 64px)',
+          pt: { xs: '64px', md: '72px' },
+          pb: 4,
         }}
       >
         <IconButton
@@ -158,7 +163,8 @@ const PostDetail = () => {
       <Box 
         sx={{ 
           p: 2,
-          minHeight: 'calc(100vh - 64px)',
+          pt: { xs: '64px', md: '72px' },
+          pb: 4,
         }}
       >
         <IconButton
@@ -180,26 +186,10 @@ const PostDetail = () => {
   return (
     <Box 
       sx={{ 
-        minHeight: 'calc(100vh - 64px)',
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'auto',
-        '&::-webkit-scrollbar': {
-          width: '8px',
-        },
-        '&::-webkit-scrollbar-track': {
-          background: 'transparent',
-        },
-        '&::-webkit-scrollbar-thumb': {
-          background: 'rgba(0, 0, 0, 0.2)',
-          borderRadius: '4px',
-          '&:hover': {
-            background: 'rgba(0, 0, 0, 0.3)',
-          },
-        },
-        // For Firefox
-        scrollbarWidth: 'thin',
-        scrollbarColor: 'rgba(0, 0, 0, 0.2) transparent',
+        pt: { xs: '64px', md: '72px' },
+        pb: 4,
+        bgcolor: 'background.default',
+        minHeight: '100vh',
       }}
     >
       <IconButton
@@ -225,7 +215,6 @@ const PostDetail = () => {
           elevation={0}
           sx={{
             p: { xs: 2, md: 4 },
-            mb: 4,
             bgcolor: 'background.paper',
             maxWidth: '800px',
             mx: 'auto',
@@ -401,10 +390,6 @@ const PostDetail = () => {
         open={commentsOpen}
         onClose={() => setCommentsOpen(false)}
         postId={postId}
-        onCommentAdded={() => {
-          // Refresh the post to update comment count
-          fetchPost();
-        }}
       />
     </Box>
   );
