@@ -17,16 +17,14 @@ import { Box } from '@mui/material';
 function PageWrapper({ children }) {
   return (
     <Box sx={{
-      height: '100vh',
+      minHeight: '100vh',
       display: 'flex',
       flexDirection: 'column',
-      overflow: 'hidden',
     }}>
       <Box sx={{
         pt: { xs: '64px', md: '72px' }, // Match navbar height
         display: 'flex',
-        height: '100%',
-        overflow: 'hidden',
+        flex: 1,
         flexDirection: 'column',
       }}>
         {children}
