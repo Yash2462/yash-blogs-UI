@@ -211,9 +211,7 @@ const CreatePost = () => {
       
       <Box sx={{ 
         background: '#f0f4ff',
-        minHeight: '100vh',
-        pt: { xs: '64px', md: '72px' },
-        pb: 0,
+        py: 3,
         flex: 1,
         overflowY: 'auto'
       }}>
@@ -230,17 +228,16 @@ const CreatePost = () => {
             mb: 3, 
             textAlign: { xs: 'center', lg: 'left' },
             maxWidth: { lg: '1000px' },
-            mx: { lg: 'auto' },
-            pt: 1
+            mx: { lg: 'auto' }
           }}>
             <Button
               startIcon={<ArrowBack />}
               onClick={() => navigate('/posts')}
-              sx={{ mb: 1, color: '#1e293b' }}
+              sx={{ mb: 2, color: '#1e293b' }}
             >
               Back to Posts
             </Button>
-            <Typography variant="h3" fontWeight={600} sx={{ mb: 0.5 }}>
+            <Typography variant="h3" fontWeight={700} sx={{ mb: 1 }}>
               Create New Post
             </Typography>
             <Typography variant="h6" color="text.secondary">
