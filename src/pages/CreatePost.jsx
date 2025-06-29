@@ -61,8 +61,8 @@ const publishingTips = [
   },
   {
     icon: <Description />,
-    title: 'Engaging Excerpt',
-    description: 'Keep your excerpt concise and make readers want to continue'
+    title: 'Engaging Description',
+    description: 'Keep your description concise and make readers want to continue'
   },
   {
     icon: <Image />,
@@ -86,7 +86,7 @@ const CreatePost = () => {
   const { user } = useAuth();
   const [formData, setFormData] = useState({
     title: '',
-    excerpt: '',
+    description: '',
     data: '',
     categoryId: '',
     postImage: ''
@@ -135,7 +135,7 @@ const CreatePost = () => {
     try {
       const response = await api.post(`/api/posts/user/${user.id}/category/${formData.categoryId}`, formData);
       setSnackbar({ open: true, message: 'Post created successfully!', severity: 'success' });
-      setFormData({ title: '', excerpt: '', data: '', categoryId: '', postImage: '' });
+      setFormData({ title: '', description: '', data: '', categoryId: '', postImage: '' });
       setIsDirty(false);
       
       setTimeout(() => {
@@ -162,14 +162,14 @@ const CreatePost = () => {
     const hasTitle = formData.title.trim().length > 0;
     const hasContent = formData.data.trim().length > 0;
     const hasCategory = formData.categoryId !== '';
-    const hasExcerpt = formData.excerpt.trim().length > 0;
+    const hasDescription = formData.description.trim().length > 0;
     const hasImage = formData.postImage.trim().length > 0;
 
     return {
       title: hasTitle,
       content: hasContent,
       category: hasCategory,
-      excerpt: hasExcerpt,
+      description: hasDescription,
       image: hasImage,
       isComplete: hasTitle && hasContent && hasCategory
     };
@@ -210,7 +210,7 @@ const CreatePost = () => {
       />
       
       <Box sx={{ 
-        background: '#f0f4ff',
+        background: 'white',
         py: 3,
         flex: 1,
         overflowY: 'auto'
@@ -333,21 +333,21 @@ const CreatePost = () => {
                           />
                         </Box>
 
-                        {/* Excerpt Field */}
+                        {/* Description Field */}
                         <Box>
                           <Typography variant="subtitle1" fontWeight="bold" component="label" sx={{ display: 'block', mb: 1, textAlign: 'left' }}>
-                            Post Excerpt
+                            Post Description
                           </Typography>
                           <TextField
-                            name="excerpt"
+                            name="description"
                             fullWidth
-                            value={formData.excerpt}
+                            value={formData.description}
                             onChange={handleChange}
                             multiline
                             rows={3}
                             variant="outlined"
                             size="small"
-                            placeholder="Write a brief description that will appear in previews..."
+                            placeholder="Write a brief description of your post..."
                             sx={{
                               '& .MuiOutlinedInput-root': {
                                 fontSize: { xs: '0.9rem', sm: '0.95rem' },
@@ -461,7 +461,7 @@ const CreatePost = () => {
                             </Typography>
                             
                             <Typography variant="h6" color="text.secondary" sx={{ mb: 3, fontSize: { xs: '1rem', sm: '1.1rem' } }}>
-                              {formData.excerpt || 'Your post excerpt will appear here...'}
+                              {formData.description || 'Your post description will appear here...'}
                             </Typography>
                             
                             {formData.postImage && (
@@ -586,11 +586,11 @@ const CreatePost = () => {
                       </Box>
                       <Box display="flex" alignItems="center" justifyContent="space-between">
                         <Box display="flex" alignItems="center" gap={1}>
-                          {validation.excerpt ? <CheckCircle color="success" fontSize="small" /> : <Info color="info" fontSize="small" />}
-                          <Typography variant="body2">Excerpt</Typography>
+                          {validation.description ? <CheckCircle color="success" fontSize="small" /> : <Info color="info" fontSize="small" />}
+                          <Typography variant="body2">Description</Typography>
                         </Box>
-                        <Typography variant="caption" color={validation.excerpt ? "success.main" : "info.main"}>
-                          {validation.excerpt ? "✓" : "○"}
+                        <Typography variant="caption" color={validation.description ? "success.main" : "info.main"}>
+                          {validation.description ? "✓" : "○"}
                         </Typography>
                       </Box>
                       <Box display="flex" alignItems="center" justifyContent="space-between">
@@ -652,7 +652,7 @@ const CreatePost = () => {
                         variant="outlined"
                         size="small"
                         fullWidth
-                        onClick={() => setFormData({ title: '', excerpt: '', data: '', categoryId: '', postImage: '' })}
+                        onClick={() => setFormData({ title: '', description: '', data: '', categoryId: '', postImage: '' })}
                         disabled={!isDirty}
                         sx={{ 
                           borderColor: '#1e293b',

@@ -11,12 +11,14 @@ import {
   Grid,
   CssBaseline,
   Link,
+  Fade,
 } from '@mui/material';
 import api from '../api/axios';
 import { useAuth } from '../contexts/AuthContext';
 
 const Signup = () => {
   const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -30,12 +32,12 @@ const Signup = () => {
     setSuccess('');
     setLoading(true);
     try {
-      const res = await api.post('/api/auth/signup', { email, password });
+      const res = await api.post('/api/auth/signup', { email, username, password });
       if (res.data && res.data.token) {
         login(res.data.token);
         setSuccess('Signup successful! Logging you in...');
         setTimeout(() => {
-          navigate('/dashboard');
+          navigate('/posts');
         }, 1000);
       } else if (res.status === 200 || res.status === 201) {
         setSuccess('Signup successful! Please log in.');
@@ -73,118 +75,156 @@ const Signup = () => {
       container
       component="main"
       sx={{
-        height: 'calc(100vh - 64px)',
+        height: '100vh',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: '#f0f4ff',
+        minHeight: '100vh',
       }}
     >
       <CssBaseline />
-      <Grid
-        item
-        xs={12}
-        sm={8}
-        md={5}
-        lg={4}
-        component={Paper}
-        elevation={6}
-        sx={{
-          p: 4,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          borderRadius: 2,
-        }}
-      >
-        <Typography component="h1" variant="h5" fontWeight="bold" sx={{ mb: 1 }}>
-          Create an account
-        </Typography>
-        <Typography component="p" color="text.secondary" sx={{ mb: 3 }}>
-          Enter your details to get started
-        </Typography>
-
-        {error && (
-          <Alert severity="error" sx={{ mb: 2, width: '100%' }}>
-            {error}
-          </Alert>
-        )}
-        {success && (
-          <Alert severity="success" sx={{ mb: 2, width: '100%' }}>
-            {success}
-          </Alert>
-        )}
-
-        <Box
-          component="form"
-          onSubmit={handleSignup}
-          sx={{ mt: 1, width: '100%' }}
+      <Fade in={true} timeout={400}>
+        <Grid
+          item
+          xs={12}
+          sm={8}
+          md={5}
+          lg={4}
+          component={Paper}
+          elevation={6}
+          sx={{
+            p: 4,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            borderRadius: 2,
+            transition: 'all 0.2s ease-in-out',
+            '&:hover': {
+              transform: 'translateY(-1px)',
+              boxShadow: 8,
+            },
+          }}
         >
-          <Typography
-            variant="subtitle1"
-            fontWeight="bold"
-            component="label"
-            htmlFor="email"
-            sx={{ display: 'block', mb: 1 , textAlign:'left' }}
-          >
-            Email
+          <Typography component="h1" variant="h5" fontWeight="bold" sx={{ mb: 1 }}>
+            Create an account
           </Typography>
-          <TextField
-            required
-            fullWidth
-            id="email"
-            placeholder="Enter your email"
-            name="email"
-            autoComplete="email"
-            autoFocus
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            sx={{ mb: 2 }}
-          />
-          <Typography
-            variant="subtitle1"
-            fontWeight="bold"
-            component="label"
-            htmlFor="password"
-            sx={{ display: 'block', mb: 1 , textAlign:'left' }}
-          >
-            Password
+          <Typography component="p" color="text.secondary" sx={{ mb: 3 }}>
+            Enter your details to get started
           </Typography>
-          <TextField
-            required
-            fullWidth
-            name="password"
-            placeholder="Enter your password"
-            type="password"
-            id="password"
-            autoComplete="new-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            sx={{
-              mt: 3,
-              mb: 2,
-              backgroundColor: '#1e293b',
-              '&:hover': {
-                backgroundColor: '#334155',
-              },
-            }}
-            disabled={loading}
+
+          {error && (
+            <Alert severity="error" sx={{ mb: 2, width: '100%' }}>
+              {error}
+            </Alert>
+          )}
+          {success && (
+            <Alert severity="success" sx={{ mb: 2, width: '100%' }}>
+              {success}
+            </Alert>
+          )}
+
+          <Box
+            component="form"
+            onSubmit={handleSignup}
+            sx={{ mt: 1, width: '100%' }}
           >
-            {loading ? <CircularProgress size={24} color="inherit" /> : 'Sign up'}
-          </Button>
-          <Typography align="center">
-            Already have an account?{' '}
-            <Link component={RouterLink} to="/login">
-              Sign in
-            </Link>
-          </Typography>
-        </Box>
-      </Grid>
+            <Typography
+              variant="subtitle1"
+              fontWeight="bold"
+              component="label"
+              htmlFor="email"
+              sx={{ display: 'block', mb: 1 , textAlign:'left' }}
+            >
+              Email
+            </Typography>
+            <TextField
+              required
+              fullWidth
+              id="email"
+              placeholder="Enter your email"
+              name="email"
+              autoComplete="email"
+              autoFocus
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              sx={{ mb: 2 }}
+            />
+            <Typography
+              variant="subtitle1"
+              fontWeight="bold"
+              component="label"
+              htmlFor="username"
+              sx={{ display: 'block', mb: 1 , textAlign:'left' }}
+            >
+              Username
+            </Typography>
+            <TextField
+              required
+              fullWidth
+              id="username"
+              placeholder="Choose a username"
+              name="username"
+              autoComplete="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              sx={{ mb: 2 }}
+            />
+            <Typography
+              variant="subtitle1"
+              fontWeight="bold"
+              component="label"
+              htmlFor="password"
+              sx={{ display: 'block', mb: 1 , textAlign:'left' }}
+            >
+              Password
+            </Typography>
+            <TextField
+              required
+              fullWidth
+              name="password"
+              placeholder="Enter your password"
+              type="password"
+              id="password"
+              autoComplete="new-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              sx={{
+                mt: 3,
+                mb: 2,
+                backgroundColor: '#1e293b',
+                transition: 'all 0.2s ease-in-out',
+                '&:hover': {
+                  backgroundColor: '#334155',
+                },
+              }}
+              disabled={loading}
+            >
+              {loading ? <CircularProgress size={24} color="inherit" /> : 'Sign up'}
+            </Button>
+            <Typography align="center">
+              Already have an account?{' '}
+              <Link 
+                component={RouterLink} 
+                to="/login"
+                sx={{
+                  transition: 'all 0.2s ease-in-out',
+                  '&:hover': {
+                    color: '#1e293b',
+                  },
+                }}
+              >
+                Sign in
+              </Link>
+            </Typography>
+          </Box>
+        </Grid>
+      </Fade>
     </Grid>
   );
 };
