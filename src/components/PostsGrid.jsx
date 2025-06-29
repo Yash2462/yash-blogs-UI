@@ -130,7 +130,7 @@ const PostsGrid = ({ posts = [] }) => {
           'scrollbar-width': 'none',
         }}
       >
-        <Grid container spacing={2} sx={{ p: 1 }}>
+        <Grid container spacing={4} sx={{ p: 2 }}>
           {posts.map((post) => {
             const postId = post._id || post.id || post.postId;
             if (!postId) return null;
