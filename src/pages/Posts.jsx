@@ -108,7 +108,7 @@ const Posts = () => {
       <GlobalStyles
         styles={{
           '*::-webkit-scrollbar': {
-            width: '4px',
+            width: '8px',
           },
           '*::-webkit-scrollbar-track': {
             background: '#f1f1f1',
@@ -124,75 +124,80 @@ const Posts = () => {
       />
 
       {/* Scrollable page content */}
-      <Container
-        maxWidth="lg"
+      <Box
         sx={{
-          mt: 2,
           height: 'calc(100vh - 96px)',
           overflowY: 'auto',
           pr: 1,
-          pb: 5,
         }}
       >
-        {alert && (
-          <Alert
-            severity={alert.type}
-            onClose={() => setAlert(null)}
-            sx={{ mb: 2 }}
-          >
-            {alert.message}
-          </Alert>
-        )}
-
-        <Box sx={{ textAlign: 'center', my: 2 }}>
-          <Typography variant="h2" fontWeight="bold" gutterBottom>
-            Welcome to BlogSpace
-          </Typography>
-          <Typography
-            variant="h6"
-            color="text.secondary"
-            sx={{ maxWidth: '700px', mx: 'auto' }}
-          >
-            Discover amazing stories, share your thoughts, and connect with a
-            community of passionate writers and readers.
-          </Typography>
-        </Box>
-
-        {/* Category filters */}
-        <Stack
-          direction="row"
-          justifyContent="center"
-          spacing={2}
-          sx={{ mb: 6, flexWrap: 'wrap' }}
+        <Container
+          maxWidth="lg"
+          sx={{
+            mt: 2,
+            pb: 5,
+          }}
         >
-          {categories.map((category) => (
-            <Button
-              key={category.id || category.name}
-              variant={
-                selectedCategory === category.name ? 'contained' : 'outlined'
-              }
-              onClick={() => handleCategoryClick(category.name)}
-              sx={{
-                borderRadius: 20,
-                textTransform: 'none',
-                fontWeight: 'medium',
-                my: 0.5,
-              }}
+          {alert && (
+            <Alert
+              severity={alert.type}
+              onClose={() => setAlert(null)}
+              sx={{ mb: 2 }}
             >
-              {category.name}
-            </Button>
-          ))}
-        </Stack>
+              {alert.message}
+            </Alert>
+          )}
 
-        {/* Post list or loader */}
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', my: 5 }}>
-            <CircularProgress />
+          <Box sx={{ textAlign: 'center', my: 2 }}>
+            <Typography variant="h2" fontWeight="bold" gutterBottom>
+              Welcome to BlogSpace
+            </Typography>
+            <Typography
+              variant="h6"
+              color="text.secondary"
+              sx={{ maxWidth: '700px', mx: 'auto' }}
+            >
+              Discover amazing stories, share your thoughts, and connect with a
+              community of passionate writers and readers.
+            </Typography>
           </Box>
-        ) : (
-          <PostsGrid posts={posts} />
-        )}
-      </Container>
+
+          {/* Category filters */}
+          <Stack
+            direction="row"
+            justifyContent="center"
+            spacing={2}
+            sx={{ mb: 6, flexWrap: 'wrap' }}
+          >
+            {categories.map((category) => (
+              <Button
+                key={category.id || category.name}
+                variant={
+                  selectedCategory === category.name ? 'contained' : 'outlined'
+                }
+                onClick={() => handleCategoryClick(category.name)}
+                sx={{
+                  borderRadius: 20,
+                  textTransform: 'none',
+                  fontWeight: 'medium',
+                  my: 0.5,
+                }}
+              >
+                {category.name}
+              </Button>
+            ))}
+          </Stack>
+
+          {/* Post list or loader */}
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', my: 5 }}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <PostsGrid posts={posts} />
+          )}
+        </Container>
+      </Box>
     </>
   );
 };
